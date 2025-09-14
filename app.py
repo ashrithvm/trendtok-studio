@@ -5,14 +5,15 @@ from summariser.llama_api import llama_api
 from tiktok_to_text.api import t4_api
 from tiktok_videos.download import download_videos
 from animate_text.api import generate_image
+from dotenv import load_dotenv
 import json
 import os
-import secrets
 
-secret_key = secrets.token_hex(16)
+# Load environment variables
+load_dotenv()
 
 app = Flask(__name__)
-app.secret_key = secret_key
+app.secret_key = os.getenv('FLASK_SECRET_KEY', 'default-dev-key-change-in-production')
 Bootstrap(app)
 
 

@@ -17,9 +17,11 @@ def llama_api_summary_tag(desc: str) -> str:
     Returns:
     str: The summarized text along with tags/keywords.
     """
-    llama = LlamaAPI(
-        "LL-5jGRFRsV3TctJy0qMVwno5LKiAoWEHreyTZVCbNrUJVaUp3AcAB3HqiRH1dCpzSi"
-    )
+    api_key = os.getenv('LLAMA_API_KEY')
+    if not api_key:
+        raise ValueError("LLAMA_API_KEY environment variable is required")
+    
+    llama = LlamaAPI(api_key)
 
     # API Request JSON structure
     api_request_summarize_tags = {

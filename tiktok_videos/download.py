@@ -3,8 +3,17 @@ import gdown
 from google.oauth2 import service_account
 from googleapiclient.discovery import build
 
-SERVICE_ACCOUNT_FILE = 'tiktok_videos/techjam.json'
+# Get service account file path from environment variable
+SERVICE_ACCOUNT_FILE = os.getenv('GOOGLE_SERVICE_ACCOUNT_FILE', 'service_account.json')
 SCOPES = ['https://www.googleapis.com/auth/drive.readonly']
+
+# Check if the service account file exists
+if not os.path.exists(SERVICE_ACCOUNT_FILE):
+    raise FileNotFoundError(
+        f"Google service account file not found: {SERVICE_ACCOUNT_FILE}. "
+        "Please set the GOOGLE_SERVICE_ACCOUNT_FILE environment variable or "
+        "place the service account JSON file in the project root."
+    )
 
 credentials = service_account.Credentials.from_service_account_file(
     SERVICE_ACCOUNT_FILE, scopes=SCOPES)

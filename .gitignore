@@ -1,9 +1,41 @@
-venv
+# Python
+venv/
 *.wav
-__pycache__
+__pycache__/
+*.py[cod]
+*$py.class
 env/
+.venv/
+.env/
+dist/
+build/
+*.egg-info/
+
+# Environment variables
+.env
+.env.local
+.env.production
+.env.development
+
+# OS
 .DS_Store
-.gitignore
-.git
+.DS_Store?
+._*
+
+# IDE
+.vscode/
+.idea/
+
+# Project specific
 static/video/*
-tiktok_videos/techjam.json
+tiktok_videos/*.json
+tiktok_videos/*.mp4
+*.mp4
+gen_img.png
+temp_audio*.wav
+
+# Git
+.git/
+
+# Logs
+*.log

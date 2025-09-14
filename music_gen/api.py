@@ -4,6 +4,10 @@ import numpy as np
 from transformers import AutoProcessor, MusicgenForConditionalGeneration
 
 
+# Model configuration
+MUSICGEN_MODEL = "facebook/musicgen-small"
+
+
 def gen_api(desc: str, output_file_name: str, audio_length: int) -> str:
     """
     Generate audio from a textual description and save it as a .wav file.
@@ -25,9 +29,9 @@ def gen_api(desc: str, output_file_name: str, audio_length: int) -> str:
     """
 
     # Load the pre-trained processor and model
-    processor = AutoProcessor.from_pretrained("facebook/musicgen-small")
+    processor = AutoProcessor.from_pretrained(MUSICGEN_MODEL)
     model = MusicgenForConditionalGeneration.from_pretrained(
-        "facebook/musicgen-small", attn_implementation="eager")
+        MUSICGEN_MODEL, attn_implementation="eager")
 
     # Process the input description text
     inputs = processor(

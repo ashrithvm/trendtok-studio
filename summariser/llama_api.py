@@ -1,9 +1,13 @@
+import os
 from llamaapi import LlamaAPI
 
 
 def llama_api(desc: str) -> str:
-    llama = LlamaAPI(
-        'LL-vc1xoxRAiBZbaAVEhMGkYyHc1PEn0uw8elJirZRKZwcqosPJj38B8idwX0aT0Dvi')
+    api_key = os.getenv('LLAMA_API_KEY')
+    if not api_key:
+        raise ValueError("LLAMA_API_KEY environment variable is required")
+    
+    llama = LlamaAPI(api_key)
 
     # API Request JSON Cell
     api_request_idea = {
