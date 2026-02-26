@@ -30,7 +30,7 @@ requests==2.32.3
 safetensors==0.4.3
 scipy==1.14.0
 setuptools==70.2.0
-speechrecognition==3.10.4
+yt-dlp
 sympy==1.12.1
 tokenizers==0.19.1
 torch==2.3.1

@@ -3,19 +3,53 @@ from typing import Dict, List
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
 import moviepy.editor as mp
-import speech_recognition as sr
 from groq import Groq
 
 
-def llama_api_summary_tag(desc: str) -> str:
+def transcribe_audio_from_video(video_file: str) -> str:
     """
-    Generate a summary and tags/keywords for a given text using Groq API.
+    Transcribe audio from a video file using Groq Whisper.
+    Returns empty string on any failure (no audio track, API error, etc).
+    Temp WAV file is always cleaned up.
+    """
+    name = video_file.split('.')[0].split('/')[-1]
+    audio_path = f"temp_audio{name}.wav"
 
-    Parameters:
-    desc (str): The input text to be summarized and tagged.
+    try:
+        video = mp.VideoFileClip(video_file)
+        if video.audio is None:
+            print(f"No audio track in {video_file}")
+            return ''
 
-    Returns:
-    str: The summarized text along with tags/keywords.
+        video.audio.write_audiofile(audio_path, logger=None)
+
+        api_key = os.getenv('GROQ_API_KEY')
+        client = Groq(api_key=api_key)
+
+        with open(audio_path, 'rb') as f:
+            transcription = client.audio.transcriptions.create(
+                file=(os.path.basename(audio_path), f.read()),
+                model='whisper-large-v3-turbo',
+                language='en',
+                response_format='text'
+            )
+
+        # response_format='text' returns a plain string
+        return transcription if isinstance(transcription, str) else transcription.text
+
+    except Exception as e:
+        print(f"Transcription failed for {video_file}: {e}")
+        return ''
+
+    finally:
+        if os.path.exists(audio_path):
+            os.remove(audio_path)
+
+
+def llama_api_summary_tag(desc: str, tag: str = '') -> str:
+    """
+    Summarize text and extract hashtag keywords using Groq (Llama 3.1 8B).
+    The tag anchors the LLM to the correct category and filters out song lyrics.
     """
     api_key = os.getenv('GROQ_API_KEY')
     if not api_key:
@@ -23,12 +57,21 @@ def llama_api_summary_tag(desc: str) -> str:
 
     client = Groq(api_key=api_key)
 
+    category_context = f" The content is from videos in the #{tag} category." if tag else ""
+
     response = client.chat.completions.create(
         model="llama-3.1-8b-instant",
         messages=[
             {
                 "role": "system",
-                "content": "Summarize the sentences in less than 80 words. Give the top tags/keywords for this summarized text (at least one tag for each sentence) along with the summarized text.",
+                "content": (
+                    f"You are analyzing transcriptions from short-form videos.{category_context} "
+                    "Ignore all song lyrics, music, and background audio — focus only on spoken "
+                    "tutorial, instructional, or informational content relevant to the category. "
+                    "Summarize the relevant content in less than 80 words. "
+                    "Give the top tags/keywords for this summarized text (at least one tag for each sentence) "
+                    "along with the summarized text."
+                ),
             },
             {"role": "user", "content": desc},
         ],
@@ -39,111 +82,66 @@ def llama_api_summary_tag(desc: str) -> str:
 
 def text_cleaning(input_text: str):
     """
-    Clean and extract the summary and tags from the input text.
-
-    Parameters:
-    input_text (str): The raw input text containing the summary and tags.
-
-    Returns:
-    tuple: A tuple containing the cleaned summary and tags.
+    Extract summary and tags from LLM response.
+    Returns (summary_text, tags_text). Either may be empty if delimiters not found.
     """
-    # Define delimiters for extracting summary and tags
     summary_start = "Here is a summary of the text in under 80 words:\n\n"
     summary_end = "\n\nTop tags/keywords:\n\n"
     tags_start = "\n\nTop tags/keywords:\n\n"
 
-    # Extract the summary text
     summary_text = input_text[
-        input_text.find(summary_start) + len(summary_start): input_text.find(
-            summary_end
-        )
+        input_text.find(summary_start) + len(summary_start): input_text.find(summary_end)
     ].strip()
 
-    # Extract the tags text
-    tags_text = input_text[input_text.find(
-        tags_start) + len(tags_start):].strip()
+    tags_text = input_text[input_text.find(tags_start) + len(tags_start):].strip()
     tags_text = tags_text.replace("* ", "").replace("\n*", "\n").strip()
 
     return summary_text, tags_text
 
 
-def transcribe_audio_from_video(video_file):
+def t4_api(video_files: List[str], metadata_texts: List[str] = None, tag: str = '') -> Dict:
     """
-    Transcribe audio from a given video file using Google Speech Recognition.
+    Transcribe videos and extract trend tags with a 3-layer fallback:
 
-    Parameters:
-    video_file (str): The path to the video file.
-
-    Returns:
-    str: The transcribed text from the video.
+    Layer 1 — Groq Whisper transcription of video audio (best quality)
+    Layer 2 — yt-dlp metadata (video titles/descriptions) if transcription fails
+    Layer 3 — Raw search tag if no content available at all
     """
-    # Load the video file
-    video = mp.VideoFileClip(video_file)
-
-    # Extract audio from the video
-    audio = video.audio
-    name = video_file.split('.')[0].split('/')[-1]
-    audio.write_audiofile(f"temp_audio{name}.wav")
-
-    # Initialize the recognizer
-    recognizer = sr.Recognizer()
-
-    # Load and transcribe the audio file
-    audio_file = sr.AudioFile(f"temp_audio{name}.wav")
-    with audio_file as source:
-        audio_data = recognizer.record(source)
-        text = recognizer.recognize_google(
-            audio_data, language='en')
-
-    return text
-
-
-def t4_api(video_files: List[str]) -> Dict:
-    """
-    Main function to process multiple video files, transcribe their audio,
-    and summarize the transcriptions with tags/keywords.
-
-    Parameters:
-    video_files (List[str]): A list of paths to video files.
-
-    Returns:
-    Dict: A dictionary containing the summarized text and tags.
-    """
-    def process_video(video_file):
-        # Transcribe audio from the video
-        transcription = transcribe_audio_from_video(video_file)
-        print(f"Transcription for {video_file}:\n{transcription}\n")
-
-        return transcription
+    if metadata_texts is None:
+        metadata_texts = []
 
     all_transcriptions = []
 
-    # Use ThreadPoolExecutor to parallelize the processing of video files
     with ThreadPoolExecutor() as executor:
-        future_to_video = {executor.submit(
-            process_video, video_file): video_file for video_file in video_files}
+        future_to_video = {
+            executor.submit(transcribe_audio_from_video, vf): vf
+            for vf in video_files
+        }
         for future in as_completed(future_to_video):
-            video_file = future_to_video[future]
-            try:
-                transcription = future.result()
-                all_transcriptions.append(transcription)
-            except Exception as e:
-                print(f"Exception occurred while processing {video_file}: {e}")
+            result = future.result()
+            if result.strip():
+                print(f"Transcription for {future_to_video[future]}:\n{result}\n")
+                all_transcriptions.append(result)
 
-    # Combine all transcriptions into one text
-    all_transcriptions_text = "\n\n".join(all_transcriptions)
+    # Layer 1: use transcriptions
+    if all_transcriptions:
+        content = "\n\n".join(all_transcriptions)
+    # Layer 2: fall back to yt-dlp video metadata
+    elif metadata_texts:
+        print("No transcriptions succeeded — using video metadata as fallback")
+        content = "\n\n".join(metadata_texts)
+    # Layer 3: fall back to the search tag itself
+    elif tag:
+        print("No metadata available — using search tag as fallback")
+        content = f"TikTok trending content related to: #{tag}"
+    else:
+        content = "trending TikTok content"
 
-    # Summarize the combined transcriptions and extract tags
-    summary_tag = llama_api_summary_tag(all_transcriptions_text)
+    summary_tag = llama_api_summary_tag(content, tag=tag)
     summary_text, tags_text = text_cleaning(summary_tag)
-
-    # Clean up temporary audio file
-    name = [video_file.split('.')[0].split('/')[-1]
-            for video_file in video_files]
-    for i in name:
-        os.remove(f"temp_audio{i}.wav")
 
     return {
         "summary": summary_text,
-        "tags": tags_text,
+        "tags": tags_text if tags_text else content,
+        "search_tag": tag,
     }

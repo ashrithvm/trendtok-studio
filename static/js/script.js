@@ -65,6 +65,8 @@ document.addEventListener('DOMContentLoaded', function () {
 
                             ideaText.textContent = data.idea;
                             conceptText.textContent = data.concept;
+                            document.getElementById('twist-text').textContent = data.twist_name;
+                            document.getElementById('twist-concept-text').textContent = data.twist_concept;
                             infoText.style.display = 'block';
                             return fetch('/generate_media', {
                                 method: 'POST',
