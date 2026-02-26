@@ -1,3 +1,6 @@
+from dotenv import load_dotenv
+load_dotenv()
+
 from flask import Flask, render_template, request, jsonify, url_for, session, send_from_directory
 from flask_bootstrap import Bootstrap
 from music_gen.api import gen_api
@@ -5,12 +8,8 @@ from summariser.llama_api import llama_api
 from tiktok_to_text.api import t4_api
 from tiktok_videos.download import download_videos
 from animate_text.api import generate_image
-from dotenv import load_dotenv
 import json
 import os
-
-# Load environment variables
-load_dotenv()
 
 app = Flask(__name__)
 app.secret_key = os.getenv('FLASK_SECRET_KEY', 'default-dev-key-change-in-production')

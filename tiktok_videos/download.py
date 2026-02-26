@@ -30,11 +30,11 @@ def fetch_video_ids_from_folder(folder_id):
 
 def download_videos(tag, output_dir):
     folders = {
-        "#AI - #MachineLearning - #TechInnovation": "1JYv-bd4bWg2LucmnS0631wqJCABAwA0g",
-        "#Foodie - #RecipeOfTheDay - #CookingHacks": "1oGdZ8xWMq3bH74MhFL8PmDKOv5IK2p0I",
-        "#MakeupTutorial - #BeautyHacks - #SkincareRoutine": "1bn2d-6tjDi9cb03uRwFG019B4CKjnyT7",
-        "#OOTD - #FashionInspo - #StyleTips": "1axVn0xBJ41grkByuCdEOGNFJ-YjVIJST",
-        "#TravelVlog - #HiddenGems - #TravelTips": "1Y1zbBzSWB_sbQp7P7Y4yAnX3UzWQtLfl"
+        "#AI - #MachineLearning - #TechInnovation": "1vlFJcJYQ7Ca5NmkEB_Mz7eodD7SulUBt",
+        "#Foodie - #RecipeOfTheDay - #CookingHacks": "1GsfEPqd-irGjbcbjl5i5HHErP88PBCTV",
+        "#MakeupTutorial - #BeautyHacks - #SkincareRoutine": "12c8B8fhkJMhFOYt22Yg-EkdqFPLuu9nI",
+        "#OOTD - #FashionInspo - #StyleTips": "1PcbHTuSpe-F0BZR6u1FwOLhQOt7jngK4",
+        "#TravelVlog - #HiddenGems - #TravelTips": "1CDCg6ed_gDwXxVA9wCb964OlyoM167y3"
     }
 
     folder_id = None

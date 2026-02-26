@@ -14,7 +14,7 @@ class Config:
         return value
     
     # API Configuration
-    LLAMA_API_KEY = get_env_var.__func__('LLAMA_API_KEY')
+    GROQ_API_KEY = get_env_var.__func__('GROQ_API_KEY')
     
     # Google Drive Configuration  
     GOOGLE_SERVICE_ACCOUNT_FILE = get_env_var.__func__('GOOGLE_SERVICE_ACCOUNT_FILE', 'service_account.json')

@@ -1,18 +1,17 @@
 import os
-from llamaapi import LlamaAPI
+from groq import Groq
 
 
 def llama_api(desc: str) -> str:
-    api_key = os.getenv('LLAMA_API_KEY')
+    api_key = os.getenv('GROQ_API_KEY')
     if not api_key:
-        raise ValueError("LLAMA_API_KEY environment variable is required")
-    
-    llama = LlamaAPI(api_key)
+        raise ValueError("GROQ_API_KEY environment variable is required")
 
-    # API Request JSON Cell
-    api_request_idea = {
-        "model": "llama3-8b",
-        "messages": [
+    client = Groq(api_key=api_key)
+
+    response_idea = client.chat.completions.create(
+        model="llama-3.1-8b-instant",
+        messages=[
             {
                 "role": "system",
                 "content": "You are a TikTok trend idea generator which can come up with a new trend idea. Your response should include a title starting with 'Trend Idea:', followed by a concise description starting with 'Trend Concept:'."
@@ -22,19 +21,15 @@ def llama_api(desc: str) -> str:
                 "content": desc["tags"],
             },
         ],
-        "max_tokens": 250,
-        "stream": False
-    }
+        max_tokens=250,
+    )
 
-    api_request_song = {
-        "model": "llama3-8b",
-        "messages": [
+    response_song = client.chat.completions.create(
+        model="llama-3.1-8b-instant",
+        messages=[
             {"role": "system", "content": "You are a tiktok trend generator which can take tags and generate audio cues to be given to a Music generator model. Your response includes only the audio description for a 5 second clip. It is very concise."},
             {"role": "user", "content": desc["tags"]},
-        ]
-    }
+        ],
+    )
 
-    # Make your request and handle the response
-    response_idea = llama.run(api_request_idea)
-    response_song = llama.run(api_request_song)
-    return response_idea.json()['choices'][0]['message']['content'], response_song.json()['choices'][0]['message']['content']
+    return response_idea.choices[0].message.content, response_song.choices[0].message.content

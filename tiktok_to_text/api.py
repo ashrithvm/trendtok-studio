@@ -4,12 +4,12 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 
 import moviepy.editor as mp
 import speech_recognition as sr
-from llamaapi import LlamaAPI
+from groq import Groq
 
 
 def llama_api_summary_tag(desc: str) -> str:
     """
-    Generate a summary and tags/keywords for a given text using the LlamaAPI.
+    Generate a summary and tags/keywords for a given text using Groq API.
 
     Parameters:
     desc (str): The input text to be summarized and tagged.
@@ -17,27 +17,24 @@ def llama_api_summary_tag(desc: str) -> str:
     Returns:
     str: The summarized text along with tags/keywords.
     """
-    api_key = os.getenv('LLAMA_API_KEY')
+    api_key = os.getenv('GROQ_API_KEY')
     if not api_key:
-        raise ValueError("LLAMA_API_KEY environment variable is required")
-    
-    llama = LlamaAPI(api_key)
+        raise ValueError("GROQ_API_KEY environment variable is required")
 
-    # API Request JSON structure
-    api_request_summarize_tags = {
-        "model": "llama3-8b",
-        "messages": [
+    client = Groq(api_key=api_key)
+
+    response = client.chat.completions.create(
+        model="llama-3.1-8b-instant",
+        messages=[
             {
                 "role": "system",
                 "content": "Summarize the sentences in less than 80 words. Give the top tags/keywords for this summarized text (at least one tag for each sentence) along with the summarized text.",
             },
             {"role": "user", "content": desc},
         ],
-    }
+    )
 
-    # Make the API request and handle the response
-    response_summary_tag = llama.run(api_request_summarize_tags)
-    return response_summary_tag.json()["choices"][0]["message"]["content"]
+    return response.choices[0].message.content
 
 
 def text_cleaning(input_text: str):
